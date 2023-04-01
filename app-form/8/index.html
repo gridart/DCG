@@ -1,0 +1,273 @@
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us</title>
+</head>
+<body>
+  <br>
+  <center>
+  <form class="gform pure-form pure-form-stacked" method="POST" data-email="#mail" action="#www-googlesappscript">
+    <div class="form-elements"><br>
+      <div style="background:none;border:8px solid gray;border-radius: 30px;width: 400px;padding-top: 15px;padding-bottom: 40px;padding-left: 20px;padding-right: 20px;"><br>
+        <b class="content-head" style="font-size: 2.3em;">Contact Us!</b>
+        <br><br>
+         <b style="margin-left: -255px;font-size: 1.3em;">Name</b><br>
+        <input type="text" name="name" required="" style="font-size: 1em;width: 300px;"><br><br>
+
+        <b style="margin-left: -255px;font-size: 1.3em;">Email</b><br>
+        <input type="email" name="email" required="" style="font-size: 1em;width: 300px;"><br><br>
+
+         <b style="margin-left: -255px;font-size: 1.3em;">Phone</b><br>
+         <input type="number" name="phone" required="" style="font-size: 1em;width: 300px;"><br><br>
+      
+        <b style="margin-left: -110px;font-size: 1.3em;">How can we help you?</b><br>
+        <textarea name="message" rows="5" cols="22" required="" style="font-size: 1.3em;width: 300px;"></textarea><br><br>
+    
+        <button style="float: right;width: 100px;height: 27px;font-size: 1.1em;margin-right: 48px;">
+        send</button><br>
+      </div>
+    </div>
+
+    <!-- Thankyou_message --><br>
+    <div class="thankyou_message" style="display:none;background:none;border:8px solid gray;border-radius: 40px;width: 400px;padding-top: 15px;padding-bottom: 40px;padding-left: 20px;padding-right: 20px;"><br><br>
+      <h1>Thanks for contacting us!</h1>
+      <h1>*******</h1>
+    </div>
+  </form>
+  <script data-cfasync="false" type="text/javascript">
+    
+   (function() {
+  function validEmail(email) {
+    var re = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+    return re.test(email);
+  }
+
+  function validateHuman(honeypot) {
+    if (honeypot) {
+      console.log("Robot Detected!");
+      return true;
+    } else {
+      console.log("Welcome Human!");
+    }
+  }
+  function getFormData(form) {
+    var elements = form.elements;
+
+    var fields = Object.keys(elements).filter(function(k) {
+          return (elements[k].name !== "honeypot");
+    }).map(function(k) {
+      if(elements[k].name !== undefined) {
+        return elements[k].name;
+      }else if(elements[k].length > 0){
+        return elements[k].item(0).name;
+      }
+    }).filter(function(item, pos, self) {
+      return self.indexOf(item) == pos && item;
+    });
+
+    var formData = {};
+    fields.forEach(function(name){
+      var element = elements[name];
+      formData[name] = element.value;
+      if (element.length) {
+        var data = [];
+        for (var i = 0; i < element.length; i++) {
+          var item = element.item(i);
+          if (item.checked || item.selected) {
+            data.push(item.value);
+          }
+        }
+        formData[name] = data.join(', ');
+      }
+    });
+
+    // add form-specific values into the data
+    formData.formDataNameOrder = JSON.stringify(fields);
+    formData.formGoogleSheetName = form.dataset.sheet || "Sheet1"; // default sheet name
+    formData.formGoogleSendEmail = form.dataset.email || ""; // no email by default
+
+    console.log(formData);
+    return formData;
+  }
+
+  function handleFormSubmit(event) {  
+    event.preventDefault();           
+    var form = event.target;
+    var data = getFormData(form);         
+    if( data.email && !validEmail(data.email) ) {   
+      var invalidEmail = form.querySelector(".email-invalid");
+      if (invalidEmail) {
+        invalidEmail.style.display = "block";
+        return false;
+      }
+    } else {
+      disableAllButtons(form);
+      var url = form.action;
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xhr.onreadystatechange = function() {
+          console.log(xhr.status, xhr.statusText);
+          console.log(xhr.responseText);
+          var formElements = form.querySelector(".form-elements")
+          if (formElements) {
+            formElements.style.display = "none"; // hide form
+          }
+          var thankYouMessage = form.querySelector(".thankyou_message");
+          if (thankYouMessage) {
+            thankYouMessage.style.display = "block";
+          }
+          return;
+      };
+      var encoded = Object.keys(data).map(function(k) {
+          return encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
+      }).join('&');
+      xhr.send(encoded);
+    }
+  }
+  
+  function loaded() {
+    console.log("Contact form submission handler loaded successfully.");
+    var forms = document.querySelectorAll("form.gform");
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].addEventListener("submit", handleFormSubmit, false);
+    }
+  };
+  document.addEventListener("DOMContentLoaded", loaded, false);
+
+  function disableAllButtons(form) {
+    var buttons = form.querySelectorAll("button");
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].disabled = true;
+    }
+  }
+})();
+
+
+  </script>
+<script data-cfasync="false" type="text/javascript">function formatMailBody(obj,order) {
+  var result = "";
+  for (var idx in order) {
+    var key = order[idx];
+    result += "<h4 style='text-transform: capitalize; margin-bottom: 0'>" + key + "</h4><div>" + sanitizeInput(obj[key]) + "</div>";
+  }
+  return result; 
+}
+
+function sanitizeInput(rawInput) {
+   var placeholder = HtmlService.createHtmlOutput(" ");
+   placeholder.appendUntrusted(rawInput);
+  
+   return placeholder.getContent();
+ }
+
+function doPost(e) {
+
+  try {
+    Logger.log(e);
+    record_data(e);
+    
+    var mailData = e.parameters;
+
+    var orderParameter = e.parameters.formDataNameOrder;
+    var dataOrder;
+    if (orderParameter) {
+      dataOrder = JSON.parse(orderParameter);
+    }
+    
+    
+    var sendEmailTo = (typeof TO_ADDRESS !== "undefined") ? TO_ADDRESS : mailData.formGoogleSendEmail;
+    
+   
+    if (sendEmailTo) {
+      MailApp.sendEmail({
+        to: String(sendEmailTo),
+        subject: "Contact form submitted",
+        
+        htmlBody: formatMailBody(mailData, dataOrder)
+      });
+    }
+
+    return ContentService    // return json success results
+          .createTextOutput(
+            JSON.stringify({"result":"success",
+                            "data": JSON.stringify(e.parameters) }))
+          .setMimeType(ContentService.MimeType.JSON);
+  } catch(error) { // if error return this
+    Logger.log(error);
+    return ContentService
+          .createTextOutput(JSON.stringify({"result":"error", "error": error}))
+          .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+
+function record_data(e) {
+  var lock = LockService.getDocumentLock();
+  lock.waitLock(30000); // hold off up to 30 sec to avoid concurrent writing
+  
+  try {
+    Logger.log(JSON.stringify(e)); // log the POST data in case we need to debug it
+    
+    var doc = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetName = e.parameters.formGoogleSheetName || "sheetname";
+    var sheet = doc.getSheetByName(sheetName);
+    
+    var oldHeader = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var newHeader = oldHeader.slice();
+    var fieldsFromForm = getDataColumns(e.parameters);
+    var row = [new Date()]; // first element in the row should always be a timestamp
+    
+   
+    for (var i = 1; i < oldHeader.length; i++) { // start at 1 to avoid Timestamp column
+      var field = oldHeader[i];
+      var output = getFieldFromData(field, e.parameters);
+      row.push(output);
+  
+      var formIndex = fieldsFromForm.indexOf(field);
+      if (formIndex > -1) {
+        fieldsFromForm.splice(formIndex, 1);
+      }
+    }
+    
+    
+    for (var i = 0; i < fieldsFromForm.length; i++) {
+      var field = fieldsFromForm[i];
+      var output = getFieldFromData(field, e.parameters);
+      row.push(output);
+      newHeader.push(field);
+    }
+    
+    var nextRow = sheet.getLastRow() + 1; // get next row
+    sheet.getRange(nextRow, 1, 1, row.length).setValues([row]);
+
+    if (newHeader.length > oldHeader.length) {
+      sheet.getRange(1, 1, 1, newHeader.length).setValues([newHeader]);
+    }
+  }
+  catch(error) {
+    Logger.log(error);
+  }
+  finally {
+    lock.releaseLock();
+    return;
+  }
+
+}
+
+function getDataColumns(data) {
+  return Object.keys(data).filter(function(column) {
+    return !(column === 'formDataNameOrder' || column === 'formGoogleSheetName' || column === 'formGoogleSendEmail' || column === 'honeypot');
+  });
+}
+
+function getFieldFromData(field, data) {
+  var values = data[field] || '';
+  var output = values.join ? values.join(', ') : values;
+  return output;
+}</script></center>
+
+
+</body></html>
